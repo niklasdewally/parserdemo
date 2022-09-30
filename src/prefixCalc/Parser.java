@@ -1,5 +1,6 @@
 package prefixCalc;
 
+import ast.Node;
 import prefixCalc.tokens.*;
 
 import java.util.List;
@@ -23,24 +24,26 @@ import static prefixCalc.Lexer.lex;
 public class Parser {
     private int currentTokenIndex;
     private List<Token> tokens;
+    private Node root;
 
     public Parser() {
     }
 
-    public void run(List<Token> tokens){
+    public Node run(List<Token> tokens){
         this.tokens = tokens;
         currentTokenIndex = 0;
+        root = new Node(null,"EXPRESSION");
 
         try {
-            if (!expression()) {
+            if (!expression(root)) {
                 System.out.println("Invalid at token number " + (currentTokenIndex + 1) + " " + tokens.get(currentTokenIndex).getClass().getSimpleName());
-                return;
+                return root;
             }
 
             // If there are trailing characters at the end , error
-            if (currentTokenIndex != tokens.size() - 1) {
+            if (currentTokenIndex != tokens.size() -1) {
                 System.out.println("Invalid at token number " + (currentTokenIndex + 1) + " " + tokens.get(currentTokenIndex).getClass().getSimpleName());
-                return;
+                return root;
             }
 
             System.out.println("Valid!");
@@ -48,54 +51,66 @@ public class Parser {
         catch (IndexOutOfBoundsException e){
             System.out.println("Expected more input!");
         }
+
+        return root;
     }
 
-    private boolean expression() {
+    private boolean expression(Node currentNode) {
         // Go through rule, checking token by token
 
         if (!tokens.get(currentTokenIndex).getClass().equals(OpenBracketToken.class)) {
             return false;
         }
+        currentNode.createChild("(");
 
         // Now check the next token
         currentTokenIndex++;
 
         // Try to recursively resolve function to see if this is what we are expecting.
-        if (!terminalFunction()) {
+        Node functionNode = currentNode.createChild("FUNCTION");
+
+        if (!terminalFunction(functionNode)) {
+            currentNode.removeChild(functionNode);
             return false;
         }
-
-        // Now check the next token
         currentTokenIndex++;
 
 
         // Try to recursively resolve args to see if this is what we are expecting.
         int beforeIndex = currentTokenIndex;
-        if(args()) {
+        Node argsNode = currentNode.createChild("OPERANDS");
+        if(args(argsNode)) {
             currentTokenIndex++;
         }
         else{
             // Backtrack
             currentTokenIndex = beforeIndex;
+            currentNode.removeChild(argsNode);
+            return false;
         }
         // However, this can also be null
-        if (!tokens.get(currentTokenIndex).getClass().equals(ClosedBracketToken.class))
+        currentNode.createChild(")");
+        if (!tokens.get(currentTokenIndex).getClass().equals(ClosedBracketToken.class)) {
             return false;
+        }
 
-        return true;
+    return true;
     }
 
-    private boolean terminalFunction() {
+    private boolean terminalFunction(Node currentNode) {
         // Terminals!
         Token currentToken = tokens.get(currentTokenIndex);
         switch (currentToken) {
             case AddToken a -> {
+                currentNode.createChild("+");
                 return true;
             }
             case SubtractToken b -> {
+                currentNode.createChild("-");
                 return true;
             }
             case MultiplyToken c -> {
+                currentNode.createChild("*");
                 return true;
             }
             case default -> {
@@ -116,43 +131,57 @@ args' -> INT args'
 I do it this way so I avoid having args -> args INT, which is left recursion which makes this run infinitely!
 
      */
-    private boolean args() {
+    private boolean args(Node currentNode) {
         int beforeIndex = currentTokenIndex;
-        if (expression()) {
+        Node exprNode = currentNode.createChild("EXPRESSION");
+        if (expression(exprNode)) {
             currentTokenIndex++;
-            return argsP();
+            return argsP(currentNode);
         }
         else {
             // Backtrack
             currentTokenIndex = beforeIndex;
+            currentNode.removeChild(exprNode);
         }
-        if (terminalInteger()) {
+        Node intNode = currentNode.createChild("INTEGER");
+        if (terminalInteger(intNode)) {
             currentTokenIndex++;
-            return argsP();
+            return argsP(currentNode);
+        }
+        else {
+            currentNode.removeChild(intNode);
         }
         return false;
     }
 
-    private boolean argsP() {
-        if (terminalInteger()) {
+    private boolean argsP(Node currentNode) {
+        Node intNode = currentNode.createChild("INTEGER");
+        if (terminalInteger(intNode)) {
             currentTokenIndex++;
-            return argsP();
+            return argsP(currentNode);
         }
+        else  {
+            currentNode.removeChild(intNode);
+        }
+
         int beforeIndex = currentTokenIndex;
-        if (expression()) {
+        Node exprNode = currentNode.createChild("EXPRESSION");
+        if (expression(exprNode)) {
             currentTokenIndex++;
-            argsP();
+            return argsP(currentNode);
         }
         else {
             currentTokenIndex = beforeIndex;
+            currentNode.removeChild(exprNode);
         }
         // NULL condition
         // THIS IS A HACK! - upper layers expect argsP to use up a token, but null isnt a token!
         currentTokenIndex--;
         return true;
     }
-    private boolean terminalInteger(){
+    private boolean terminalInteger(Node currentNode){
         if (tokens.get(currentTokenIndex).getClass().equals(IntToken.class)) {
+           currentNode.createChild(tokens.get(currentTokenIndex).getValue()) ;
             return true;
         }
         return false;
@@ -163,7 +192,8 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
         Parser parser = new Parser();
         while (stdin.hasNextLine()) {
             try {
-                parser.run(lex(stdin.nextLine()));
+                Node astRoot = parser.run(lex(stdin.nextLine()));
+                System.out.println();
             }
             catch (IllegalArgumentException e){
                 System.out.println("Illegal input character " + e.getMessage());
