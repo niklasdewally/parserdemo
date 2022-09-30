@@ -36,20 +36,21 @@ public class Parser {
 
         try {
             if (!expression(root)) {
-                System.out.println("Invalid at token number " + (currentTokenIndex + 1) + " " + tokens.get(currentTokenIndex).getClass().getSimpleName());
-                return root;
+                //System.out.println("Invalid at token number " + (currentTokenIndex + 1) + " " + tokens.get(currentTokenIndex).getClass().getSimpleName());
+                throw new IllegalArgumentException();
             }
 
             // If there are trailing characters at the end , error
             if (currentTokenIndex != tokens.size() -1) {
-                System.out.println("Invalid at token number " + (currentTokenIndex + 1) + " " + tokens.get(currentTokenIndex).getClass().getSimpleName());
-                return root;
+                //System.out.println("Invalid at token number " + (currentTokenIndex + 1) + " " + tokens.get(currentTokenIndex).getClass().getSimpleName());
+                throw new IllegalArgumentException();
             }
 
-            System.out.println("Valid!");
+            //System.out.println("Valid!");
         }
         catch (IndexOutOfBoundsException e){
-            System.out.println("Expected more input!");
+            throw new IllegalArgumentException();
+            //System.out.println("Expected more input!");
         }
 
         return root;
