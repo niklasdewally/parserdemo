@@ -1,16 +1,10 @@
 package com.dewally.niklas.parserdemo.prefixCalc;
 
+import com.dewally.niklas.parserdemo.ast.ASTFactory;
 import com.dewally.niklas.parserdemo.ast.INode;
-import com.dewally.niklas.parserdemo.ast.Node;
 import com.dewally.niklas.parserdemo.ast.Token;
-import com.dewally.niklas.parserdemo.graphviz.GraphvizNodeConverter;
 import com.dewally.niklas.parserdemo.prefixCalc.tokens.*;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -34,19 +28,37 @@ public class Parser {
     private int currentTokenIndex;
     private List<Token> tokens;
     private INode root;
-    private List<Node> tracedTrees;
-    private boolean trace = false;
-    private int traceFileNumber = 0;
+    private boolean doTrace;
+    private final int traceFileNumber = 0;
+    private ASTFactory astFactory;
 
     public Parser() {
+        new Parser(false);
     }
 
-    public INode run(List<Token> tokens){
+    public Parser(boolean doTrace) {
+        this.doTrace = doTrace;
+        astFactory = new ASTFactory();
+    }
+
+    public static void main(String[] args) {
+        Scanner stdin = new Scanner(System.in);
+        Parser parser = new Parser();
+        while (stdin.hasNextLine()) {
+            try {
+                INode astRoot = parser.run(lex(stdin.nextLine()));
+                System.out.println();
+            } catch (IllegalArgumentException e) {
+                System.out.println("Illegal input character " + e.getMessage());
+            }
+        }
+    }
+
+    public INode run(List<Token> tokens) {
         this.tokens = tokens;
         currentTokenIndex = 0;
-        tracedTrees = new ArrayList<>();
 
-        root = new Node(null,"EXPRESSION");
+        root = astFactory.createAST(doTrace);
 
         try {
             if (!expression(root)) {
@@ -55,27 +67,19 @@ public class Parser {
             }
 
             // If there are trailing characters at the end , error
-            if (currentTokenIndex != tokens.size() -1) {
+            if (currentTokenIndex != tokens.size() - 1) {
                 //System.out.println("Invalid at token number " + (currentTokenIndex + 1) + " " + tokens.get(currentTokenIndex).getClass().getSimpleName());
                 throw new IllegalArgumentException();
             }
 
             //System.out.println("Valid!");
-        }
-        catch (IndexOutOfBoundsException e){
+        } catch (IndexOutOfBoundsException e) {
             throw new IllegalArgumentException();
             //System.out.println("Expected more input!");
         }
 
         return root;
     }
-
-    public INode runWithTrace(List<Token> tokens) {
-       trace = true;
-       traceFileNumber = 0;
-       return run(tokens);
-    }
-
 
     private boolean expression(INode currentNode) {
         // Go through rule, checking token by token
@@ -84,18 +88,15 @@ public class Parser {
             return false;
         }
         currentNode.createChild("(");
-        onGraphUpdate();
 
         // Now check the next token
         currentTokenIndex++;
 
         // Try to recursively resolve function to see if this is what we are expecting.
         INode functionNode = currentNode.createChild("FUNCTION");
-        onGraphUpdate();
 
         if (!terminalFunction(functionNode)) {
             currentNode.removeChild(functionNode);
-            onGraphUpdate();
             return false;
         }
         currentTokenIndex++;
@@ -104,25 +105,17 @@ public class Parser {
         // Try to recursively resolve args to see if this is what we are expecting.
         int beforeIndex = currentTokenIndex;
         INode argsNode = currentNode.createChild("OPERANDS");
-        onGraphUpdate();
-        if(args(argsNode)) {
+        if (args(argsNode)) {
             currentTokenIndex++;
-        }
-        else{
+        } else {
             // Backtrack
             currentTokenIndex = beforeIndex;
             currentNode.removeChild(argsNode);
-            onGraphUpdate();
             return false;
         }
         // However, this can also be null
         currentNode.createChild(")");
-        if (!tokens.get(currentTokenIndex).getClass().equals(ClosedBracketToken.class)) {
-            return false;
-        }
-
-        onGraphUpdate();
-    return true;
+        return tokens.get(currentTokenIndex).getClass().equals(ClosedBracketToken.class);
     }
 
     private boolean terminalFunction(INode currentNode) {
@@ -131,17 +124,14 @@ public class Parser {
         switch (currentToken) {
             case AddToken a -> {
                 currentNode.createChild("+");
-                onGraphUpdate();
                 return true;
             }
             case SubtractToken b -> {
                 currentNode.createChild("-");
-                onGraphUpdate();
                 return true;
             }
             case MultiplyToken c -> {
                 currentNode.createChild("*");
-                onGraphUpdate();
                 return true;
             }
             case default -> {
@@ -150,105 +140,68 @@ public class Parser {
         }
     }
 
+    /*
+        args -> INT args'
+        | expression args'
 
-/*
-    args -> INT args'
-	| expression args'
+    args' -> INT args'
+        | expression args'
+        | NIL
 
-args' -> INT args'
-	| expression args'
-	| NIL
+    I do it this way so I avoid having args -> args INT, which is left recursion which makes this run infinitely!
 
-I do it this way so I avoid having args -> args INT, which is left recursion which makes this run infinitely!
-
-     */
+         */
     private boolean args(INode currentNode) {
         int beforeIndex = currentTokenIndex;
         INode exprNode = currentNode.createChild("EXPRESSION");
-        onGraphUpdate();
+
         if (expression(exprNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
-        }
-        else {
+        } else {
             // Backtrack
             currentTokenIndex = beforeIndex;
             currentNode.removeChild(exprNode);
-            onGraphUpdate();
         }
         INode intNode = currentNode.createChild("INTEGER");
-        onGraphUpdate();
         if (terminalInteger(intNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
-        }
-        else {
+        } else {
             currentNode.removeChild(intNode);
-            onGraphUpdate();
         }
         return false;
     }
 
     private boolean argsP(INode currentNode) {
         INode intNode = currentNode.createChild("INTEGER");
-        onGraphUpdate();
         if (terminalInteger(intNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
-        }
-        else  {
+        } else {
             currentNode.removeChild(intNode);
-            onGraphUpdate();
         }
 
         int beforeIndex = currentTokenIndex;
         INode exprNode = currentNode.createChild("EXPRESSION");
-        onGraphUpdate();
         if (expression(exprNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
-        }
-        else {
+        } else {
             currentTokenIndex = beforeIndex;
             currentNode.removeChild(exprNode);
-            onGraphUpdate();
         }
         // NULL condition
         // THIS IS A HACK! - upper layers expect argsP to use up a token, but null isnt a token!
         currentTokenIndex--;
         return true;
     }
-    private boolean terminalInteger(INode currentNode){
+
+    private boolean terminalInteger(INode currentNode) {
         if (tokens.get(currentTokenIndex).getClass().equals(IntToken.class)) {
-           currentNode.createChild(tokens.get(currentTokenIndex).getValue()) ;
-           onGraphUpdate();
+            currentNode.createChild(tokens.get(currentTokenIndex).getValue());
             return true;
         }
         return false;
-    }
-
-    private void onGraphUpdate(){
-        // if we are tracing, draw the graph of the current state;
-        if (trace) {
-            try {
-                Graphviz.fromGraph(GraphvizNodeConverter.nodeToGraphviz(root)).render(Format.SVG).toFile(new File("graph-" + traceFileNumber + ".svg"));
-                traceFileNumber++;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    public static void main(String[] args) {
-        Scanner stdin = new Scanner(System.in);
-        Parser parser = new Parser();
-        while (stdin.hasNextLine()) {
-            try {
-                INode astRoot = parser.run(lex(stdin.nextLine()));
-                System.out.println();
-            }
-            catch (IllegalArgumentException e){
-                System.out.println("Illegal input character " + e.getMessage());
-            }
-        }
     }
 }
