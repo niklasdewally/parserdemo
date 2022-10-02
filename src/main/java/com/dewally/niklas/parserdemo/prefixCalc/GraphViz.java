@@ -1,11 +1,10 @@
-package prefixCalc;
+package com.dewally.niklas.parserdemo.prefixCalc;
 
-import ast.Node;
+import com.dewally.niklas.parserdemo.prefixCalc.ast.Node;
 
-import javax.swing.plaf.synth.SynthTableHeaderUI;
 import java.util.Scanner;
 
-import static prefixCalc.Lexer.lex;
+import static com.dewally.niklas.parserdemo.prefixCalc.Lexer.lex;
 
 public class GraphViz {
     public static void main(String[] args) {

@@ -1,12 +1,12 @@
-package prefixCalc;
+package com.dewally.niklas.parserdemo.prefixCalc;
 
-import ast.Node;
+import com.dewally.niklas.parserdemo.prefixCalc.ast.Node;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import static prefixCalc.Lexer.lex;
+import static com.dewally.niklas.parserdemo.prefixCalc.Lexer.lex;
 
 public class Interpreter {
     public static int evaluate(Node node){

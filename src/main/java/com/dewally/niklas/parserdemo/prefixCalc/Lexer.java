@@ -1,6 +1,7 @@
-package prefixCalc;
+package com.dewally.niklas.parserdemo.prefixCalc;
 
-import prefixCalc.tokens.*;
+import com.dewally.niklas.parserdemo.prefixCalc.tokens.Token;
+import com.dewally.niklas.parserdemo.prefixCalc.tokens.*;
 
 import java.util.ArrayList;
 import java.util.List;

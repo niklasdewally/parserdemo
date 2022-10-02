@@ -1,4 +1,4 @@
-package prefixCalc.tokens;
+package com.dewally.niklas.parserdemo.prefixCalc.tokens;
 
 public class IntToken implements Token{
     private String value;

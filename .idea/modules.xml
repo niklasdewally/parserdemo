@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CS2001 Parser Example.iml" filepath="$PROJECT_DIR$/CS2001 Parser Example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/parser-demo.iml" filepath="$PROJECT_DIR$/parser-demo.iml" />
     </modules>
   </component>
 </project>
