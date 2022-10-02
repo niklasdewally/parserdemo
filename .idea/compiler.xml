@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="parser-demo" target="17" />
+      <module name="parser-demo" target="19" />
     </bytecodeTargetLevel>
   </component>
 </project>
