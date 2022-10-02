@@ -1,49 +1,55 @@
 package com.dewally.niklas.parserdemo.graphviz;
 
+import com.dewally.niklas.parserdemo.ast.INode;
 import com.dewally.niklas.parserdemo.ast.Node;
-
-import static guru.nidi.graphviz.attribute.Attributes.attr;
-import static guru.nidi.graphviz.model.Factory.*;
-
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Graph;
 import guru.nidi.graphviz.model.MutableGraph;
 
-import java.io.File;
-import java.io.IOException;
-
+import static guru.nidi.graphviz.attribute.Attributes.attr;
+import static guru.nidi.graphviz.model.Factory.mutGraph;
+import static guru.nidi.graphviz.model.Factory.mutNode;
 
 public class GraphvizNodeConverter {
 
-    public static Graph nodeToGraphViz(Node node){
+    /**
+     * {@code nodeToGraphviz} turns a tree of {@link INode} objects into a graphviz {@link Graph} object, linking parent
+     * to child.
+     *
+     * @param astRoot the root node of the tree to be drawn.
+     * @return the tree as a {@link Graph}
+     */
+    public static Graph nodeToGraphviz(INode astRoot) {
         MutableGraph graph = mutGraph().setDirected(true);
-        graph = graph.add(mutNode(String.valueOf(node.hashCode())).add(attr("label",node.getValue())));
-        for (Node childNode: node.getChildren()) {
-            walkTree(childNode,graph);
+
+        // Identify each node by its unique hashcode
+        String nodeID = String.valueOf(astRoot.hashCode());
+
+        // Label each node with its contents
+        String nodeLabel = astRoot.getValue();
+
+        graph = graph.add(mutNode(nodeID).add(attr("label", nodeLabel)));
+
+        for (INode childNode : astRoot.getChildren()) {
+            walkTree(childNode, graph);
         }
         return graph.toImmutable();
     }
 
-    private static void walkTree(Node node,MutableGraph graph){
-        String parentName = String.valueOf(node.getParent().hashCode());
-        String nodeName = String.valueOf(node.hashCode());
+    /* Recursively add links from parent-> child */
+    private static void walkTree(INode node, MutableGraph graph) {
 
-        graph.add(mutNode(parentName)
-                  .addLink(mutNode(nodeName).add(attr("label",node.getValue())))
+        String parentID = String.valueOf(node.getParent().hashCode());
+        String nodeID = String.valueOf(node.hashCode());
+        String nodeLabel = node.getValue();
+
+        // Parent has already been drawn, so will already have a label.
+        // We do not need to give it again.
+        graph.add(mutNode(parentID)
+                .addLink(mutNode(nodeID).add(attr("label", nodeLabel)))
         );
 
-        for (Node childNode: node.getChildren()) {
-            walkTree(childNode,graph);
+        for (INode childNode : node.getChildren()) {
+            walkTree(childNode, graph);
         }
-    }
-
-
-    public static void main(String[] args) throws IOException {
-        Node node = new Node(null,"Hello");
-        node.createChild("Hello").createChild("Hello2");
-        node.createChild("foo").createChild("bar");
-        Graph g = nodeToGraphViz(node);
-        Graphviz.fromGraph(g).render(Format.SVG_STANDALONE).toFile(new File("h.svg"));
     }
 }

@@ -1,5 +1,6 @@
 package com.dewally.niklas.parserdemo.prefixCalc;
 
+import com.dewally.niklas.parserdemo.ast.INode;
 import com.dewally.niklas.parserdemo.ast.Node;
 import com.dewally.niklas.parserdemo.graphviz.GraphvizNodeConverter;
 import guru.nidi.graphviz.engine.Format;
@@ -16,8 +17,8 @@ public class Visualiser {
         Scanner stdin = new Scanner(System.in);
         Parser parser = new Parser();
             try {
-                Node astRoot = parser.runWithTrace(lex(stdin.nextLine()));
-                Graphviz.fromGraph(GraphvizNodeConverter.nodeToGraphViz(astRoot)).render(Format.SVG).toFile(new File("graph.svg"));
+                INode astRoot = parser.runWithTrace(lex(stdin.nextLine()));
+                Graphviz.fromGraph(GraphvizNodeConverter.nodeToGraphviz(astRoot)).render(Format.SVG).toFile(new File("graph.svg"));
             }
             catch (IllegalArgumentException e){
                 System.out.println("Illegal input character " + e.getMessage());

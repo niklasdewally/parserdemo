@@ -1,10 +1,10 @@
 package com.dewally.niklas.parserdemo.prefixCalc;
 
+import com.dewally.niklas.parserdemo.ast.INode;
 import com.dewally.niklas.parserdemo.ast.Node;
 import com.dewally.niklas.parserdemo.ast.Token;
 import com.dewally.niklas.parserdemo.graphviz.GraphvizNodeConverter;
 import com.dewally.niklas.parserdemo.prefixCalc.tokens.*;
-import guru.nidi.graphviz.attribute.For;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 
@@ -33,7 +33,7 @@ import static com.dewally.niklas.parserdemo.prefixCalc.Lexer.lex;
 public class Parser {
     private int currentTokenIndex;
     private List<Token> tokens;
-    private Node root;
+    private INode root;
     private List<Node> tracedTrees;
     private boolean trace = false;
     private int traceFileNumber = 0;
@@ -41,7 +41,7 @@ public class Parser {
     public Parser() {
     }
 
-    public Node run(List<Token> tokens){
+    public INode run(List<Token> tokens){
         this.tokens = tokens;
         currentTokenIndex = 0;
         tracedTrees = new ArrayList<>();
@@ -70,14 +70,14 @@ public class Parser {
         return root;
     }
 
-    public Node runWithTrace(List<Token> tokens) {
+    public INode runWithTrace(List<Token> tokens) {
        trace = true;
        traceFileNumber = 0;
        return run(tokens);
     }
 
 
-    private boolean expression(Node currentNode) {
+    private boolean expression(INode currentNode) {
         // Go through rule, checking token by token
 
         if (!tokens.get(currentTokenIndex).getClass().equals(OpenBracketToken.class)) {
@@ -90,7 +90,7 @@ public class Parser {
         currentTokenIndex++;
 
         // Try to recursively resolve function to see if this is what we are expecting.
-        Node functionNode = currentNode.createChild("FUNCTION");
+        INode functionNode = currentNode.createChild("FUNCTION");
         onGraphUpdate();
 
         if (!terminalFunction(functionNode)) {
@@ -103,7 +103,7 @@ public class Parser {
 
         // Try to recursively resolve args to see if this is what we are expecting.
         int beforeIndex = currentTokenIndex;
-        Node argsNode = currentNode.createChild("OPERANDS");
+        INode argsNode = currentNode.createChild("OPERANDS");
         onGraphUpdate();
         if(args(argsNode)) {
             currentTokenIndex++;
@@ -125,7 +125,7 @@ public class Parser {
     return true;
     }
 
-    private boolean terminalFunction(Node currentNode) {
+    private boolean terminalFunction(INode currentNode) {
         // Terminals!
         Token currentToken = tokens.get(currentTokenIndex);
         switch (currentToken) {
@@ -162,9 +162,9 @@ args' -> INT args'
 I do it this way so I avoid having args -> args INT, which is left recursion which makes this run infinitely!
 
      */
-    private boolean args(Node currentNode) {
+    private boolean args(INode currentNode) {
         int beforeIndex = currentTokenIndex;
-        Node exprNode = currentNode.createChild("EXPRESSION");
+        INode exprNode = currentNode.createChild("EXPRESSION");
         onGraphUpdate();
         if (expression(exprNode)) {
             currentTokenIndex++;
@@ -176,7 +176,7 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
             currentNode.removeChild(exprNode);
             onGraphUpdate();
         }
-        Node intNode = currentNode.createChild("INTEGER");
+        INode intNode = currentNode.createChild("INTEGER");
         onGraphUpdate();
         if (terminalInteger(intNode)) {
             currentTokenIndex++;
@@ -189,8 +189,8 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
         return false;
     }
 
-    private boolean argsP(Node currentNode) {
-        Node intNode = currentNode.createChild("INTEGER");
+    private boolean argsP(INode currentNode) {
+        INode intNode = currentNode.createChild("INTEGER");
         onGraphUpdate();
         if (terminalInteger(intNode)) {
             currentTokenIndex++;
@@ -202,7 +202,7 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
         }
 
         int beforeIndex = currentTokenIndex;
-        Node exprNode = currentNode.createChild("EXPRESSION");
+        INode exprNode = currentNode.createChild("EXPRESSION");
         onGraphUpdate();
         if (expression(exprNode)) {
             currentTokenIndex++;
@@ -218,7 +218,7 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
         currentTokenIndex--;
         return true;
     }
-    private boolean terminalInteger(Node currentNode){
+    private boolean terminalInteger(INode currentNode){
         if (tokens.get(currentTokenIndex).getClass().equals(IntToken.class)) {
            currentNode.createChild(tokens.get(currentTokenIndex).getValue()) ;
            onGraphUpdate();
@@ -231,7 +231,7 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
         // if we are tracing, draw the graph of the current state;
         if (trace) {
             try {
-                Graphviz.fromGraph(GraphvizNodeConverter.nodeToGraphViz(root)).render(Format.SVG).toFile(new File("graph-" + traceFileNumber + ".svg"));
+                Graphviz.fromGraph(GraphvizNodeConverter.nodeToGraphviz(root)).render(Format.SVG).toFile(new File("graph-" + traceFileNumber + ".svg"));
                 traceFileNumber++;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -243,7 +243,7 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
         Parser parser = new Parser();
         while (stdin.hasNextLine()) {
             try {
-                Node astRoot = parser.run(lex(stdin.nextLine()));
+                INode astRoot = parser.run(lex(stdin.nextLine()));
                 System.out.println();
             }
             catch (IllegalArgumentException e){

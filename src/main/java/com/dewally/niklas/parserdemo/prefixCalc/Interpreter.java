@@ -1,5 +1,6 @@
 package com.dewally.niklas.parserdemo.prefixCalc;
 
+import com.dewally.niklas.parserdemo.ast.INode;
 import com.dewally.niklas.parserdemo.ast.Node;
 
 import java.util.ArrayList;
@@ -9,11 +10,11 @@ import java.util.Scanner;
 import static com.dewally.niklas.parserdemo.prefixCalc.Lexer.lex;
 
 public class Interpreter {
-    public static int evaluate(Node node){
-        List<Node> children = node.getChildren();
+    public static int evaluate(INode node){
+        List<INode> children = node.getChildren();
         List<Integer> arguments = new ArrayList<>();
         String function = "";
-        for (Node child: children) {
+        for (INode child: children) {
             switch (child.getValue()) {
                 case "FUNCTION" -> function = child.getChildren().get(0).getValue();
                 case "OPERANDS" -> arguments = collectArguments(child);
@@ -35,9 +36,9 @@ public class Interpreter {
         }
     }
 
-    private static List<Integer> collectArguments(Node operands) {
+    private static List<Integer> collectArguments(INode operands) {
         List<Integer> arguments = new ArrayList<>();
-        for (Node child : operands.getChildren()) {
+        for (INode child : operands.getChildren()) {
 
             switch (child.getValue()) {
                 case "INTEGER" -> arguments.add(Integer.valueOf(child.getChildren().get(0).getValue()));
@@ -52,7 +53,7 @@ public class Interpreter {
         Scanner stdin = new Scanner(System.in);
 
         while (stdin.hasNextLine()){
-            Node astRoot = parser.run(lex(stdin.nextLine()));
+            INode astRoot = parser.run(lex(stdin.nextLine()));
             System.out.println("> " + evaluate(astRoot));
         }
     }
