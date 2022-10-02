@@ -1,6 +1,7 @@
 package com.dewally.niklas.parserdemo.prefixCalc;
 
-import com.dewally.niklas.parserdemo.prefixCalc.ast.Node;
+import com.dewally.niklas.parserdemo.ast.Node;
+import com.dewally.niklas.parserdemo.ast.Token;
 import com.dewally.niklas.parserdemo.prefixCalc.tokens.*;
 
 import java.util.List;

@@ -1,5 +1,7 @@
 package com.dewally.niklas.parserdemo.prefixCalc.tokens;
 
-public class AddToken implements Token{
+import com.dewally.niklas.parserdemo.ast.Token;
+
+public class AddToken implements Token {
     public AddToken() {}
 }

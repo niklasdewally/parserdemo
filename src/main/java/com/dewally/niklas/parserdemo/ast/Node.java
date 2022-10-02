@@ -1,4 +1,4 @@
-package com.dewally.niklas.parserdemo.prefixCalc.ast;
+package com.dewally.niklas.parserdemo.ast;
 
 import java.util.ArrayList;
 import java.util.List;

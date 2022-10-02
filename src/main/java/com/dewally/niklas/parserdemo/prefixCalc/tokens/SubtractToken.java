@@ -1,6 +1,8 @@
 package com.dewally.niklas.parserdemo.prefixCalc.tokens;
 
-public class SubtractToken implements Token{
+import com.dewally.niklas.parserdemo.ast.Token;
+
+public class SubtractToken implements Token {
     public SubtractToken() {
     }
 }

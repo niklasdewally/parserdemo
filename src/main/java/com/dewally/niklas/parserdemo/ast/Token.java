@@ -1,4 +1,4 @@
-package com.dewally.niklas.parserdemo.prefixCalc.tokens;
+package com.dewally.niklas.parserdemo.ast;
 
 public interface Token {
     default String getValue() {

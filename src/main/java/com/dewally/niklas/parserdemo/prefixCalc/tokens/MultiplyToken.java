@@ -1,6 +1,8 @@
 package com.dewally.niklas.parserdemo.prefixCalc.tokens;
 
-public class MultiplyToken implements Token{
+import com.dewally.niklas.parserdemo.ast.Token;
+
+public class MultiplyToken implements Token {
     public MultiplyToken() {
     }
 }

@@ -1,6 +1,8 @@
 package com.dewally.niklas.parserdemo.prefixCalc.tokens;
 
-public class IntToken implements Token{
+import com.dewally.niklas.parserdemo.ast.Token;
+
+public class IntToken implements Token {
     private String value;
 
     @Override
