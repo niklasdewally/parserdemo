@@ -1,4 +1,4 @@
-package com.dewally.niklas.parserdemo.graphViz;
+package com.dewally.niklas.parserdemo.graphviz;
 
 import com.dewally.niklas.parserdemo.ast.Node;
 

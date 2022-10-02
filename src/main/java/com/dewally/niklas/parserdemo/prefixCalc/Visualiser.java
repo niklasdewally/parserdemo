@@ -1,7 +1,7 @@
 package com.dewally.niklas.parserdemo.prefixCalc;
 
 import com.dewally.niklas.parserdemo.ast.Node;
-import com.dewally.niklas.parserdemo.graphViz.GraphvizNodeConverter;
+import com.dewally.niklas.parserdemo.graphviz.GraphvizNodeConverter;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 
@@ -16,7 +16,7 @@ public class Visualiser {
         Scanner stdin = new Scanner(System.in);
         Parser parser = new Parser();
             try {
-                Node astRoot = parser.run(lex(stdin.nextLine()));
+                Node astRoot = parser.runWithTrace(lex(stdin.nextLine()));
                 Graphviz.fromGraph(GraphvizNodeConverter.nodeToGraphViz(astRoot)).render(Format.SVG).toFile(new File("graph.svg"));
             }
             catch (IllegalArgumentException e){

@@ -2,8 +2,15 @@ package com.dewally.niklas.parserdemo.prefixCalc;
 
 import com.dewally.niklas.parserdemo.ast.Node;
 import com.dewally.niklas.parserdemo.ast.Token;
+import com.dewally.niklas.parserdemo.graphviz.GraphvizNodeConverter;
 import com.dewally.niklas.parserdemo.prefixCalc.tokens.*;
+import guru.nidi.graphviz.attribute.For;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -27,6 +34,9 @@ public class Parser {
     private int currentTokenIndex;
     private List<Token> tokens;
     private Node root;
+    private List<Node> tracedTrees;
+    private boolean trace = false;
+    private int traceFileNumber = 0;
 
     public Parser() {
     }
@@ -34,6 +44,8 @@ public class Parser {
     public Node run(List<Token> tokens){
         this.tokens = tokens;
         currentTokenIndex = 0;
+        tracedTrees = new ArrayList<>();
+
         root = new Node(null,"EXPRESSION");
 
         try {
@@ -58,6 +70,13 @@ public class Parser {
         return root;
     }
 
+    public Node runWithTrace(List<Token> tokens) {
+       trace = true;
+       traceFileNumber = 0;
+       return run(tokens);
+    }
+
+
     private boolean expression(Node currentNode) {
         // Go through rule, checking token by token
 
@@ -65,15 +84,18 @@ public class Parser {
             return false;
         }
         currentNode.createChild("(");
+        onGraphUpdate();
 
         // Now check the next token
         currentTokenIndex++;
 
         // Try to recursively resolve function to see if this is what we are expecting.
         Node functionNode = currentNode.createChild("FUNCTION");
+        onGraphUpdate();
 
         if (!terminalFunction(functionNode)) {
             currentNode.removeChild(functionNode);
+            onGraphUpdate();
             return false;
         }
         currentTokenIndex++;
@@ -82,6 +104,7 @@ public class Parser {
         // Try to recursively resolve args to see if this is what we are expecting.
         int beforeIndex = currentTokenIndex;
         Node argsNode = currentNode.createChild("OPERANDS");
+        onGraphUpdate();
         if(args(argsNode)) {
             currentTokenIndex++;
         }
@@ -89,6 +112,7 @@ public class Parser {
             // Backtrack
             currentTokenIndex = beforeIndex;
             currentNode.removeChild(argsNode);
+            onGraphUpdate();
             return false;
         }
         // However, this can also be null
@@ -97,6 +121,7 @@ public class Parser {
             return false;
         }
 
+        onGraphUpdate();
     return true;
     }
 
@@ -106,14 +131,17 @@ public class Parser {
         switch (currentToken) {
             case AddToken a -> {
                 currentNode.createChild("+");
+                onGraphUpdate();
                 return true;
             }
             case SubtractToken b -> {
                 currentNode.createChild("-");
+                onGraphUpdate();
                 return true;
             }
             case MultiplyToken c -> {
                 currentNode.createChild("*");
+                onGraphUpdate();
                 return true;
             }
             case default -> {
@@ -137,6 +165,7 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
     private boolean args(Node currentNode) {
         int beforeIndex = currentTokenIndex;
         Node exprNode = currentNode.createChild("EXPRESSION");
+        onGraphUpdate();
         if (expression(exprNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
@@ -145,30 +174,36 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
             // Backtrack
             currentTokenIndex = beforeIndex;
             currentNode.removeChild(exprNode);
+            onGraphUpdate();
         }
         Node intNode = currentNode.createChild("INTEGER");
+        onGraphUpdate();
         if (terminalInteger(intNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
         }
         else {
             currentNode.removeChild(intNode);
+            onGraphUpdate();
         }
         return false;
     }
 
     private boolean argsP(Node currentNode) {
         Node intNode = currentNode.createChild("INTEGER");
+        onGraphUpdate();
         if (terminalInteger(intNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
         }
         else  {
             currentNode.removeChild(intNode);
+            onGraphUpdate();
         }
 
         int beforeIndex = currentTokenIndex;
         Node exprNode = currentNode.createChild("EXPRESSION");
+        onGraphUpdate();
         if (expression(exprNode)) {
             currentTokenIndex++;
             return argsP(currentNode);
@@ -176,6 +211,7 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
         else {
             currentTokenIndex = beforeIndex;
             currentNode.removeChild(exprNode);
+            onGraphUpdate();
         }
         // NULL condition
         // THIS IS A HACK! - upper layers expect argsP to use up a token, but null isnt a token!
@@ -185,11 +221,23 @@ I do it this way so I avoid having args -> args INT, which is left recursion whi
     private boolean terminalInteger(Node currentNode){
         if (tokens.get(currentTokenIndex).getClass().equals(IntToken.class)) {
            currentNode.createChild(tokens.get(currentTokenIndex).getValue()) ;
+           onGraphUpdate();
             return true;
         }
         return false;
     }
 
+    private void onGraphUpdate(){
+        // if we are tracing, draw the graph of the current state;
+        if (trace) {
+            try {
+                Graphviz.fromGraph(GraphvizNodeConverter.nodeToGraphViz(root)).render(Format.SVG).toFile(new File("graph-" + traceFileNumber + ".svg"));
+                traceFileNumber++;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
     public static void main(String[] args) {
         Scanner stdin = new Scanner(System.in);
         Parser parser = new Parser();
